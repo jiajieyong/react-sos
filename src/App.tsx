@@ -1,12 +1,47 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+interface ICard {
+  id: number;
+  title: {
+    en: string;
+  };
+  body:
+    | {
+        en: string;
+      }
+    | undefined;
+  link_title: string;
+  link: string;
+  text: string;
+}
 
-const Card = ({ title, text, target, linkTitle, href, rel, linkClassName }) => {
+interface IProps {
+  title: string;
+  text: string;
+  target: string;
+  linkTitle: string;
+  href: string;
+  linkClassName: string;
+}
+
+const Card = ({
+  title,
+  text,
+  target,
+  linkTitle,
+  href,
+  linkClassName,
+}: IProps) => {
   return (
     <div className="my-8">
       <div>{title}</div>
       <div>{text}</div>
-      <a className={`${linkClassName}`} target={target} rel={rel} href={href}>
+      <a
+        className={`${linkClassName}`}
+        target={target}
+        rel="external"
+        href={href}
+      >
         {linkTitle}
       </a>
     </div>
@@ -14,41 +49,45 @@ const Card = ({ title, text, target, linkTitle, href, rel, linkClassName }) => {
 };
 
 function App() {
-  const [cards, setCards] = useState([]);
+  const [cards, setCards] = useState<ICard[]>([]);
 
   useEffect(() => {
     const getData = async () => {
-      const data = await fetch("https://sbl.alwaysdata.net/api/posts");
-      return await data.json();
+      const response = await fetch("https://sbl.alwaysdata.net/api/posts");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const data: ICard[] = await response.json();
+      return data;
     };
 
-    getData().then((results) => {
-      results.forEach((item) => {
-        Object.entries(item).forEach(([key, value]) => {
-          item[key] = value;
-
-          if (key === "body" && item["body"]) {
-            item.text = item["body"].en.substr(0, 50) + "...";
+    getData().then((cards) => {
+      cards.forEach((card) => {
+        Object.entries(card).forEach(([key]) => {
+          if (key === "body" && card["body"]) {
+            card.text = card["body"].en.slice(0, 50) + "...";
           }
         });
       });
 
-      setCards(results);
+      setCards(cards);
     });
   }, []);
 
   return (
     <div>
-      {cards.map((item, i) => {
+      {cards.map((item: ICard, index) => {
         return (
           <Card
-            key={i}
+            key={index}
             title={item.title.en}
             linkTitle={item.link_title}
             href={item.link}
             text={item.text}
-            linkClassName={item.id == 1 ? "text-green-500" : ""}
-            target={item.id == 1 ? "_blank" : ""}
+            linkClassName={index === 0 ? "text-green-500" : ""}
+            target={index === 0 ? "_blank" : ""}
           />
         );
       })}
